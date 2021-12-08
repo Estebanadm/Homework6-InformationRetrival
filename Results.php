@@ -10,9 +10,8 @@
     <center>
         <font face="Arial" size="15px" color="#8f3985">
         <?php
-        if(isset($_POST[input_query])) {
-            $name = htmlspecialchars($_POST[input_query]);
-            echo shell_exec('./hw4.sh ' . $_POST[input_query] . ' -d /home/eaduran/public_html/out');
+        if(isset($_POST[required_term])||isset($_POST[default_term])) {
+            echo shell_exec('./hw4.sh '. $_POST[default_term] . ' +'. $_POST[required_term] . ' -'. $_POST[excluded_term] . ' -d /home/eaduran/public_html/out');
         }
         ?>
         </font>

@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <vector>
 
 extern int yylex(void);
 using namespace std;
@@ -29,7 +30,10 @@ string POST_FILE = "/post.txt";
 string MAP_FILE = "/map.txt";
 
 string QueryBuffer = "";
-
+vector<bool> requiredTerms;
+vector<bool> excludedTerms;
+vector<string> queryTerms;
+int numTerm=0;
 //---------  INSERT ANY CODE CALLED BY THE LEX RULES HERE --------
 
 /* Name:  Selection sort
@@ -62,7 +66,16 @@ void SelectionSort(int* accumulator, int*map, int size) {
     }
   }
 }
-
+//Detect if the token is a required token or a excluded term
+int detectRequiredOrExcluded(string token){
+  int excludedOrRequired=0;
+  if(token.at(0)=='+'){
+    excludedOrRequired=1;
+  }else if(token.at(0)=='-'){
+    excludedOrRequired=2;
+  }
+  return excludedOrRequired;
+}
 /* Name:  QuickTokenize
  * Parameters:  tokenbuffer: empty char string to store tokenized string
  * Purpose:  Tokenize input from command line into a string
@@ -76,6 +89,7 @@ void QuickTokenize(char* tokenbuffer, const string input){
 	yylex();
 	fclose (yyin);
 	strcpy(tokenbuffer, QueryBuffer.c_str());
+  cout<<"Token Buffer"<<tokenbuffer<<endl;
 	QueryBuffer =  "";
 }
 
@@ -146,11 +160,12 @@ void PrintResults(ifstream &Min, int* accumulator, int* map, int size){
  *           it was in, update accumulator with sum of weight at the document
  * Returns:  nothing
  */
+//Here I have to add the functionality for the boolean query
 void SearchPost(ifstream &Pin, const int RecordNum, const int numDocs,
-                   int* accumulator) {
+                   int* accumulator,int* numRequired,int* numExcluded) {
   int num_records = 0, docID = 0, termWt = 0;
   string line = "";
-
+  cout<<"Called"<<endl;
   // Get total number of records inside of Post file
   while(getline(Pin, line))
     num_records++;
@@ -161,10 +176,21 @@ void SearchPost(ifstream &Pin, const int RecordNum, const int numDocs,
     Pin.seekg(RecordNum * POST_RECORD_SIZE, ios::beg);
     for(int i = 0; i < numDocs; i++) {
       Pin >> docID >> termWt;
-      accumulator[docID] += termWt;
+      //if statement to add to the other lists
+      cout<<requiredTerms[numTerm]<<" "<<excludedTerms[numTerm]<<endl;
+      if(requiredTerms[numTerm]==true){
+        accumulator[docID] += termWt;
+        numRequired[docID] += termWt;
+      }else if(excludedTerms[numTerm]==true){
+        accumulator[docID] -= termWt;
+        numExcluded[docID] += termWt;
+      }else{
+        accumulator[docID] += termWt;
+      }
     }
   }
-
+  cout<<numTerm<<endl;
+  numTerm++;
   Pin.clear();
   Pin.seekg(0);
 }
@@ -225,21 +251,24 @@ bool SearchDict(ifstream &Din, unsigned long RecordNum, const string term,
  * Returns:  true or false
 */
 bool Find(ifstream &Din, ifstream &Pin, ifstream &Min,
-          const string term, int* accumulator) {
+           string term, int* accumulator,int* numRequired,int* numExcluded) {
   bool Success = false;
   unsigned long size = NUM_KEYS * 3;
   unsigned long Sum = 0, dictRecNum = 0;
   int numDocs = 0, start = 0;
-
+  
   // Hashfunction to get the record number of the dict from the queried term 
-  for (long unsigned i=0; i < term.length(); i++)
-    Sum = (Sum * 19) + term[i];  // Mult sum by 19, add byte value of char
+  //cout<<term<<endl;
+  for (long unsigned i=0; i < term.length(); i++){
+    Sum = (Sum * 19) + term[i];  // Mult sum by 19, add byte value of 
+  }
   dictRecNum = Sum % size;
 
   if(SearchDict(Din, dictRecNum, term, numDocs, start)){
-    SearchPost(Pin, start, numDocs, accumulator);
+    SearchPost(Pin, start, numDocs, accumulator,numRequired,numExcluded);
     Success = true;
   }
+  cout<<"Done"<<endl;
 
   return Success;
 }
@@ -249,6 +278,8 @@ bool Find(ifstream &Din, ifstream &Pin, ifstream &Min,
  * Purpose:  Start query process
  * Returns:  nothing
 */
+
+//here add a diferent array that contains the required terms and the excluded terms
 void Query(char* tokenbuffer){
   ifstream Din, Pin, Min;
   Din.open(DICT_FILE.c_str());
@@ -272,6 +303,8 @@ void Query(char* tokenbuffer){
     Min.seekg(0);
 
     int accumulator[num_records] = {0};
+    int numRequired[num_records]= {0};
+    int numExcluded[num_records]= {0};
     int map[num_records] = {0};
 
     for(int i = 0; i < num_records; i++)
@@ -280,7 +313,7 @@ void Query(char* tokenbuffer){
     // Split the string into separate terms and search
     char* token = strtok(tokenbuffer, " ");
     while(token) {
-      if(!Find(Din, Pin, Min, token, accumulator))
+      if(!Find(Din, Pin, Min, token, accumulator,numRequired,numExcluded))
         cerr << "\"" << token << "\" could not be found in the collection.\n\n";
       token = strtok(NULL, " ");
     }
@@ -360,10 +393,25 @@ int main(int argc, char **argv) {
   }
 
   for(i = 1; i < (argc-2); i++){
-    cout<<"argument"<<i<<argv[i]<<endl;
+    cout<<argv[i]<<endl;
+    queryTerms.push_back(argv[i]);
+    requiredTerms.push_back(false);
+    excludedTerms.push_back(false);
 		query += argv[i];
 		query += " ";
 	}
+  for(int i =0; i<queryTerms.size();i++){
+    //if term type is 0 then it is a default term. if it is a 1 it is required and if it is a 2 is a excluded
+    int termType=detectRequiredOrExcluded(queryTerms[i]);
+    if(termType==1){
+      cout<<queryTerms[i]<<" Required"<<endl;
+      requiredTerms[i]=true;
+    }
+    if(termType==2){
+      cout<<queryTerms[i]<<" Excluded"<<endl;
+      excludedTerms[i]=true;
+    }
+  }
 
   // Add directory path to files
   directory = argv[i+1];
@@ -373,6 +421,5 @@ int main(int argc, char **argv) {
 
   char tokenbuffer[query.size()];
 	QuickTokenize(tokenbuffer, query);
-	
   Query(tokenbuffer);
 }
