@@ -33,6 +33,8 @@ string QueryBuffer = "";
 vector<bool> requiredTerms;
 vector<bool> excludedTerms;
 vector<string> queryTerms;
+int numTermsRequired=0;
+int numTermsExcluded=0;
 int numTerm=0;
 //---------  INSERT ANY CODE CALLED BY THE LEX RULES HERE --------
 
@@ -89,7 +91,7 @@ void QuickTokenize(char* tokenbuffer, const string input){
 	yylex();
 	fclose (yyin);
 	strcpy(tokenbuffer, QueryBuffer.c_str());
-  cout<<"Token Buffer"<<tokenbuffer<<endl;
+  //cout<<"Token Buffer"<<tokenbuffer<<endl;
 	QueryBuffer =  "";
 }
 
@@ -124,7 +126,7 @@ void Downcase (const char Str[]) {
  *           if they are of weight higher than 0
  * Returns:  nothing
 */
-void PrintResults(ifstream &Min, int* accumulator, int* map, int size){
+void PrintResults(ifstream &Min, int* accumulator, int* map, int size,int* numRequired,int* numExcluded){
   int count = 0;
   string fileName = "";
 
@@ -136,9 +138,10 @@ void PrintResults(ifstream &Min, int* accumulator, int* map, int size){
   // Print first 10 matching files if weight is greater than 0
   for(int i = 0; i < size; i++) {
     if(count > 9)
-      break;
-    if(accumulator[i] > 0) {
-      count++;
+      break;   
+       //cout<<numRequired[i]<<" num Term Required "<<numTermsRequired<<" "<<endl<<numExcluded[i] <<" num terms excldued "<<numTermsExcluded<<endl;
+       if(numRequired[i]==numTermsRequired&&numExcluded[i]==0&&accumulator[i]>0) {
+              count++;
       if((0 <= map[i]) && (map[i] < size)) {
         Min.seekg(map[i] * MAP_RECORD_SIZE, ios::beg);
         Min >> fileName;
@@ -165,7 +168,7 @@ void SearchPost(ifstream &Pin, const int RecordNum, const int numDocs,
                    int* accumulator,int* numRequired,int* numExcluded) {
   int num_records = 0, docID = 0, termWt = 0;
   string line = "";
-  cout<<"Called"<<endl;
+  //cout<<"Called"<<endl;
   // Get total number of records inside of Post file
   while(getline(Pin, line))
     num_records++;
@@ -177,19 +180,19 @@ void SearchPost(ifstream &Pin, const int RecordNum, const int numDocs,
     for(int i = 0; i < numDocs; i++) {
       Pin >> docID >> termWt;
       //if statement to add to the other lists
-      cout<<requiredTerms[numTerm]<<" "<<excludedTerms[numTerm]<<endl;
+      //cout<<requiredTerms[numTerm]<<" "<<excludedTerms[numTerm]<<endl;
       if(requiredTerms[numTerm]==true){
         accumulator[docID] += termWt;
-        numRequired[docID] += termWt;
+        numRequired[docID] ++;
       }else if(excludedTerms[numTerm]==true){
         accumulator[docID] -= termWt;
-        numExcluded[docID] += termWt;
+        numExcluded[docID] ++;
       }else{
         accumulator[docID] += termWt;
       }
     }
   }
-  cout<<numTerm<<endl;
+  //cout<<numTerm<<endl;
   numTerm++;
   Pin.clear();
   Pin.seekg(0);
@@ -268,7 +271,7 @@ bool Find(ifstream &Din, ifstream &Pin, ifstream &Min,
     SearchPost(Pin, start, numDocs, accumulator,numRequired,numExcluded);
     Success = true;
   }
-  cout<<"Done"<<endl;
+  //cout<<"Done"<<endl;
 
   return Success;
 }
@@ -318,7 +321,7 @@ void Query(char* tokenbuffer){
       token = strtok(NULL, " ");
     }
 
-    PrintResults(Min, accumulator, map, num_records);
+    PrintResults(Min, accumulator, map, num_records,numRequired,numExcluded);
 
     Din.close();
     Pin.close();
@@ -393,7 +396,7 @@ int main(int argc, char **argv) {
   }
 
   for(i = 1; i < (argc-2); i++){
-    cout<<argv[i]<<endl;
+    //cout<<argv[i]<<endl;
     queryTerms.push_back(argv[i]);
     requiredTerms.push_back(false);
     excludedTerms.push_back(false);
@@ -404,11 +407,13 @@ int main(int argc, char **argv) {
     //if term type is 0 then it is a default term. if it is a 1 it is required and if it is a 2 is a excluded
     int termType=detectRequiredOrExcluded(queryTerms[i]);
     if(termType==1){
-      cout<<queryTerms[i]<<" Required"<<endl;
+      cout<<queryTerms[i]<<" Required "<<"<br>"<<endl;
+      numTermsRequired++;
       requiredTerms[i]=true;
     }
     if(termType==2){
-      cout<<queryTerms[i]<<" Excluded"<<endl;
+      cout<<queryTerms[i]<<" Excluded "<<"<br>"<<endl;
+      numTermsExcluded++;
       excludedTerms[i]=true;
     }
   }
