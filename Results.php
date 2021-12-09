@@ -10,8 +10,11 @@
     <center>
         <font face="Arial" size="15px" color="#8f3985">
         <?php
+        $requiredTerms= $_POST[required_term];
+        $excludedTerms= $_POST[excluded_term];
+
         if(isset($_POST[required_term])||isset($_POST[default_term])) {
-            echo shell_exec('./hw4.sh '. $_POST[default_term] . ' +'. $_POST[required_term] . ' -'. $_POST[excluded_term] . ' -d /home/eaduran/public_html/out');
+            echo shell_exec('./hw4.sh '. $_POST[default_term] . ' +'. str_replace(" "," +",$requiredTerms) .' -'. str_replace(" "," -",$excludedTerms) . ' -d /home/eaduran/public_html/out');
         }
         ?>
         </font>
