@@ -2,6 +2,7 @@
     "files.associations": {
         "*.lex": "cpp",
         "iostream": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "xstring": "cpp"
     }
 }

@@ -21,9 +21,24 @@
             $excludedTerms.=  $_POST[excluded_term];
         }
         if(isset($_POST[required_term])||isset($_POST[default_term])) {
-            echo './hw4.sh '. $_POST[default_term] . ' '. str_replace(" "," +",$requiredTerms) .' '. str_replace(" "," -",$excludedTerms) . ' -d /home/eaduran/public_html/out';
+            // echo './hw4.sh '. $_POST[default_term] . ' '. str_replace(" "," +",$requiredTerms) .' '. str_replace(" "," -",$excludedTerms) . ' -d /home/eaduran/public_html/out';
             echo shell_exec('./hw4.sh '. $_POST[default_term] . " ". str_replace(" "," +",$requiredTerms) .' '. str_replace(" "," -",$excludedTerms) . ' -d /home/eaduran/public_html/out');
         }
+        function GetTitle($url) {
+            $data = file_get_contents($url);
+            $title = preg_match('/<title[^>]*>(.*?)<\/title>/ims', $data, $matches) ? $matches[1] : null;
+            return $title;
+        }
+        function generateTitlesFile(){
+            for ($x = 1; $x <= 1954; $x+=1) {
+                $File = fopen('/home/eaduran/public_html/Titles/' . $x . '.txt', 'w') or die("Unable to open file!");
+                echo shell_exec('chmod a=rw /home/eaduran/public_html/Titles/' . $x . '.txt');
+                $txt = GetTitle('http://csce.uark.edu/~eaduran/files/' . $x . '.html');
+                fwrite($File, $txt);
+                fclose($File);
+            }
+        }
+        //generateTitlesFile();
         ?>
         </font>
     </center>

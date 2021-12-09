@@ -1,4 +1,3 @@
-
 /*----------------------------------------------------------------*/
 /* Filename:  multiplefiles.lex                                   */
 /* To compile: flex multiplefiles.lex                             */
@@ -129,6 +128,8 @@ void Downcase (const char Str[]) {
 void PrintResults(ifstream &Min, int* accumulator, int* map, int size,int* numRequired,int* numExcluded){
   int count = 0;
   string fileName = "";
+  ifstream Din;
+    
 
   SelectionSort(accumulator, map, size);
 
@@ -148,8 +149,15 @@ void PrintResults(ifstream &Min, int* accumulator, int* map, int size,int* numRe
         Min.clear();
         Min.seekg(0);
       }
-      cout << setw(17) << "<a href=files/" << fileName << ">" << fileName << "</a>" << setw(4) << accumulator[i] << "<br>";
+      size_t lastindex = fileName.find_last_of("."); 
+      string title = fileName.substr(0, lastindex);
+      string titlePath="/home/eaduran/public_html/Titles/"+title+".txt";
+      //cout<<titlePath<<endl;
+      Din.open(titlePath.c_str()); 
+      cout << setw(17) << "<a href=files/" << fileName << ">" << Din.rdbuf() << "</a>" << setw(4) << accumulator[i] << "<br>";
+      Din.close();
     }
+      
   }
 }
 
@@ -428,3 +436,4 @@ int main(int argc, char **argv) {
 	QuickTokenize(tokenbuffer, query);
   Query(tokenbuffer);
 }
+
