@@ -10,11 +10,19 @@
     <center>
         <font face="Arial" size="15px" color="#8f3985">
         <?php
-        $requiredTerms= $_POST[required_term];
-        $excludedTerms= $_POST[excluded_term];
-
+        $requiredTerms="";
+        $excludedTerms="";
+        if($_POST[required_term]!="") {
+            $requiredTerms.=" ";
+            $requiredTerms.=  $_POST[required_term];
+            
+        }if($_POST[excluded_term]!="") {
+            $excludedTerms.=" ";
+            $excludedTerms.=  $_POST[excluded_term];
+        }
         if(isset($_POST[required_term])||isset($_POST[default_term])) {
-            echo shell_exec('./hw4.sh '. $_POST[default_term] . ' +'. str_replace(" "," +",$requiredTerms) .' -'. str_replace(" "," -",$excludedTerms) . ' -d /home/eaduran/public_html/out');
+            echo './hw4.sh '. $_POST[default_term] . ' '. str_replace(" "," +",$requiredTerms) .' '. str_replace(" "," -",$excludedTerms) . ' -d /home/eaduran/public_html/out';
+            echo shell_exec('./hw4.sh '. $_POST[default_term] . " ". str_replace(" "," +",$requiredTerms) .' '. str_replace(" "," -",$excludedTerms) . ' -d /home/eaduran/public_html/out');
         }
         ?>
         </font>
