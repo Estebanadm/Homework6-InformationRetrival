@@ -149,8 +149,13 @@ void PrintResults(ifstream &Min, int* accumulator, int* map, int size,int* numRe
         Min.clear();
         Min.seekg(0);
       }
-      size_t lastindex = fileName.find_last_of("."); 
-      string title = fileName.substr(0, lastindex);
+      int index=0;
+      for(int i =0;i<fileName.length();i++){
+        if(fileName.at(i)=='.'){
+          index=i;
+        }
+      }
+      string title = fileName.substr(0, index);
       string titlePath="/home/eaduran/public_html/Titles/"+title+".txt";
       //cout<<titlePath<<endl;
       Din.open(titlePath.c_str()); 
